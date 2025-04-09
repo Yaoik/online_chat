@@ -1,0 +1,7 @@
+.idea
+.venv
+**/.git
+staticfiles
+docker-compose.yml
+Dockerfile
+README.md
