@@ -1,25 +1,56 @@
 from django.urls import re_path
-from .consumers import ChatConsumer
 from django.urls import path
 from .views import (
     ChannelView,
-    InvitationCreateView,
+    InvitationView,
     ChannelConnectView,
     MessageView
 )
 from rest_framework.routers import DefaultRouter
 from .views import ChannelView, MessageView
+from .consumers import MainConsumer
 
-router = DefaultRouter()
-router.register('channels', ChannelView, basename='channels')
-router.register('channels/<uuid:channel_uuid>/messages', MessageView, basename='messages')
-urlpatterns = router.urls
 
-websocket_urlpatterns = [
-    #re_path(r'ws/chat/(?P<room_code>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', ChatConsumer.as_asgi()),
+urlpatterns = [
+    path(
+        'api/channels/',
+        ChannelView.as_view({'get': 'list', 'post': 'create'}),
+        name='channels-list'
+    ),
+    path(
+        'api/channels/<uuid:channel_uuid>/',
+        ChannelView.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}),
+        name='channels-detail'
+    ),
+    
+    path(
+        'api/channels/<uuid:channel_uuid>/messages/',
+        MessageView.as_view({'get': 'list', 'post': 'create'}),
+        name='channel-messages-list'
+    ),
+    path(
+        'api/channels/<uuid:channel_uuid>/messages/<uuid:message_uuid>/',
+        MessageView.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}),
+        name='channel-messages-detail'
+    ),
+    
+    path(
+        'api/channels/<uuid:channel_uuid>/invitations/', 
+        InvitationView.as_view({'get': 'list', 'post': 'create'}), 
+        name='channel-invitations-list'
+    ),
+    path(
+        'api/channels/<uuid:channel_uuid>/invitations/<uuid:invitation_uuid>/', 
+        InvitationView.as_view({'get': 'retrieve', 'delete': 'destroy'}), 
+        name='channel-invitations-detail',
+    ),
+    path(
+        'api/channels/connect/<uuid:invitation_uuid>/', 
+        ChannelConnectView.as_view(), 
+        name='channel-invitations-accept'
+    ),
 ]
 
-urlpatterns += [
-    path('channels/<uuid:channel_uuid>/create_invitation/', InvitationCreateView.as_view(), name='invitation-create'),
-    path('channels/<uuid:channel_uuid>/connect/<uuid:invitation_uuid>/', ChannelConnectView.as_view(), name='channel-connect'),
+websocket_urlpatterns = [
+    re_path(r'ws/main/$', MainConsumer.as_asgi()),
 ]

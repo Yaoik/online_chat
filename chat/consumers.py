@@ -8,62 +8,58 @@ from typing import cast
 from channels_redis.core import RedisChannelLayer
 import uuid
 import logging
+from chat.models import ChannelMembership
 
 logger = logging.getLogger(__name__)
 
-class ChatConsumer(AsyncWebsocketConsumer):
+
+
+class MainConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        logger.info(f'{self.scope=}')
+        logger.info(f"Connecting WebSocket for user: {self.scope['user']}")
         
-        user:User = self.scope["user"]
+        user: User = self.scope["user"]
         self.user = user
         if self.user.is_anonymous:
+            logger.warning("Anonymous user attempted to connect")
             await self.close()
             return
 
-        # Создаем уникальное имя группы для пользователя на основе его PK
-        self.user_group_name = f"user_{self.user.pk}"
+        self.channel_groups = await self.get_user_channels()
         
-        # Добавляем канал пользователя в его группу
         self.channel_layer = cast(RedisChannelLayer, self.channel_layer)
-        await self.channel_layer.group_add(
-                self.user_group_name,
-                self.channel_name
-            )
+        for channel_id in self.channel_groups:
+            group_name = f"channel_{channel_id}"
+            await self.channel_layer.group_add(group_name, self.channel_name)
+            logger.info(f"Added user {self.user.username} to group {group_name}")
 
         await self.accept()
+        logger.info(f"WebSocket connected for user {self.user.username}")
 
     async def disconnect(self, close_code):
-        # При отключении удаляем пользователя из группы
         if not self.user.is_anonymous:
-            await self.channel_layer.group_discard(
-                self.user_group_name,
-                self.channel_name
-            )
+            # Удаляем пользователя из всех групп каналов
+            for channel_id in self.channel_groups:
+                group_name = f"channel_{channel_id}"
+                await self.channel_layer.group_discard(group_name, self.channel_name)
+                logger.info(f"Removed user {self.user.username} from group {group_name}")
+        logger.info(f"WebSocket disconnected for user {self.user.username}")
 
-    async def receive(self, text_data:str):
-        # Обработка входящих сообщений от клиента (если нужно)
-        try:
-            text_data_json = json.loads(text_data)
-        except Exception as e:
-            await self.channel_layer.group_send(
-                self.user_group_name,
-                {
-                    "type": "error",
-                    "message": str(e),
-                    "user": self.user.username,
-                }
-            )
-            return
-        
-        message = text_data_json.get("message")
+    async def receive(self, text_data: str):
+        return None
 
-        if message:
-            await self.channel_layer.group_send(
-                self.user_group_name,
-                {
-                    "type": "chat_message",
-                    "message": message,
-                    "user": self.user.username,
-                }
-            )
+    async def chat_message(self, event):
+        message_data = event["message"]
+        logger.info(f"Sending message to {self.user.username}: {message_data}")
+        await self.send(text_data=json.dumps({
+            "type": "chat_message",
+            "message": message_data,
+        }))
+
+    @database_sync_to_async
+    def get_user_channels(self):
+        # Получаем ID всех каналов, в которых состоит пользователь
+        return list(
+            ChannelMembership.objects.filter(user=self.user)
+            .values_list("channel__id", flat=True)
+        )

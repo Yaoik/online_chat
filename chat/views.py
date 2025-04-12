@@ -23,11 +23,13 @@ from .permissions import (
     IsChannelMember, 
     IsChannelAdmin, 
     IsMessageAuthorOrChannelAdmin,
-    CanCreateInvitation,
+    CanOperateInvitation,
 )
+from channels.layers import get_channel_layer
 import uuid
 from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
+from django.utils import timezone
 
 class ChannelView(
     ModelViewSet,
@@ -36,6 +38,7 @@ class ChannelView(
     Вьюшка для CRUD операций с каналами
     """
     permission_classes = [IsAuthenticated, IsChannelAdmin]
+    http_method_names = ['get', 'post', 'patch', 'delete']
     lookup_field = 'uuid'
     lookup_url_kwarg = 'channel_uuid'
     
@@ -45,7 +48,7 @@ class ChannelView(
         return ChannelSerializer
 
     def get_queryset(self):
-        return Channel.objects.filter(memberships__user=self.request.user)
+        return Channel.objects.filter(memberships__user=self.request.user).order_by('-id')
 
     def perform_create(self, serializer:ChannelCreateSerializer):
         user = self.request.user
@@ -57,27 +60,32 @@ class ChannelView(
         )
     
 
-class InvitationCreateView(APIView):
+class InvitationView(ModelViewSet):
     """
-    Вьюшка для создания приглашения
+    Вьюшка для CRD приглашения
     """
-    permission_classes = [IsAuthenticated, IsChannelAdmin, CanCreateInvitation]
-    serializer_class = InvitationSerializer
-
-    def post(self, request:Request, channel_uuid:uuid.UUID):
+    permission_classes = [IsAuthenticated, IsChannelAdmin, CanOperateInvitation]
+    http_method_names = ['get', 'post', 'delete']
+    lookup_field = 'uuid'
+    lookup_url_kwarg = 'invitation_uuid'
+    
+    def get_serializer_class(self):
+        if self.action in ['create']:
+            return InvitationCreateSerializer
+        return InvitationSerializer
+    
+    def get_queryset(self):
+        channel_uuid = self.kwargs['channel_uuid']
+        return Invitation.objects.filter(channel__uuid=channel_uuid)
+    
+    def perform_create(self, serializer:ChannelCreateSerializer):
+        user = self.request.user
+        channel_uuid = self.kwargs['channel_uuid']
         channel = get_object_or_404(Channel, uuid=channel_uuid)
-        self.check_object_permissions(request, channel)
-        serializer = InvitationCreateSerializer(
-            data={},
-            context={'request': request, 'channel': channel}
-        )
-        serializer.is_valid(raise_exception=True)
-        invitation = serializer.save()
-        return Response(
-            InvitationSerializer(invitation).data,
-            status=status.HTTP_201_CREATED
-        )
-
+        serializer.save(channel=channel, author=user)
+        
+        
+    
 class ChannelConnectView(APIView):
     """
     Вьюшка для подключения к каналу по приглашению.
@@ -91,41 +99,36 @@ class ChannelConnectView(APIView):
     
     @extend_schema(
         request=None,
-        responses=ChannelSerializer
+        responses=InvitationSerializer
     )
-    def get(self, request:Request, channel_uuid:uuid.UUID, invitation_uuid:uuid.UUID):
+    def get(self, request:Request, invitation_uuid:uuid.UUID):
         """
         Возвращает данные канала по валидному токену приглашения.
         """
-        channel = get_object_or_404(Channel, uuid=channel_uuid)
-
-        get_object_or_404(
+        invitation = get_object_or_404(
             Invitation,
             token=invitation_uuid,
-            channel=channel,
-            is_expired=False
+            expires_in__gt=timezone.now(),
         )
 
-        serializer = ChannelSerializer(channel)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(InvitationSerializer(invitation).data, status=status.HTTP_200_OK)
 
     @extend_schema(
         request=None,
         responses=ChannelSerializer
     )
-    def post(self, request:Request, channel_uuid:uuid.UUID, invitation_uuid:uuid.UUID):
+    def post(self, request:Request, invitation_uuid:uuid.UUID):
         """
         Подключает пользователя к каналу по токену приглашения.
         """
-        channel = get_object_or_404(Channel, uuid=channel_uuid)
-
-        get_object_or_404(
+        invitation = get_object_or_404(
             Invitation,
             token=invitation_uuid,
-            channel=channel,
-            is_expired=False
+            expires_in__gt=timezone.now(),
         )
 
+        channel = invitation.channel
+        
         if ChannelMembership.objects.filter(
             user=request.user,
             channel=channel
@@ -144,6 +147,10 @@ class ChannelConnectView(APIView):
         serializer = ChannelSerializer(channel)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+from channels_redis.core import RedisChannelLayer
+from asgiref.sync import async_to_sync
+from channels.db import database_sync_to_async
+from typing import cast
 
 class MessageView(
     ModelViewSet,
@@ -153,7 +160,9 @@ class MessageView(
     """
     permission_classes = [IsAuthenticated, IsChannelMember, IsMessageAuthorOrChannelAdmin]
     serializer_class = MessageSerializer
-
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    lookup_field = 'uuid'
+    lookup_url_kwarg = 'message_uuid'
     
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PUT', 'PATCH']:
@@ -162,9 +171,23 @@ class MessageView(
 
     def get_queryset(self):
         channel_uuid = self.kwargs['channel_uuid']
-        return Message.objects.filter(channel_uuid=channel_uuid)
+        return Message.objects.filter(channel__uuid=channel_uuid).order_by('-id')
 
     def perform_create(self, serializer:MessageCreateSerializer):
         channel_uuid = self.kwargs['channel_uuid']
         channel = get_object_or_404(Channel, uuid=channel_uuid)
-        serializer.save(channel=channel)
+        user = self.request.user
+        message = serializer.save(channel=channel, user=user)
+        self._send_ws_message(message)
+    
+    def _send_ws_message(self, message: Message) -> None:
+        channel_layer = cast(RedisChannelLayer, get_channel_layer())
+        message_data = MessageSerializer(message).data
+        
+        async_to_sync(channel_layer.group_send)(
+            f"channel_{message.channel.id}",
+            {
+                "type": "chat.message",
+                "message": message_data,
+            }
+        )
