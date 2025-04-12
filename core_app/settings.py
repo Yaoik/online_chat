@@ -16,7 +16,7 @@ CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", default="http://127.0.0
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", default="*").split(',')
 CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN", default="")
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", default='http://127.0.0.1:8000').split(',')
-
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 # Application definition
 
 DJANGO_APPS = [
@@ -33,6 +33,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'drf_spectacular',
     'django_extensions',
+    'channels',
 ]
 
 INSTALLED_APPS = [
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     *THIRD_PARTY_APPS,
     'common',
     'users',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -90,7 +92,7 @@ DATABASES = {
         },
     }
 }
-
+#DATABASES['default']['HOST'] = 'localhost'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -154,6 +156,10 @@ LOGGING = {
             "propagate": False,
         },
     },
+    'daphne': {
+        "handlers": ["console"],
+        "level": "INFO" if DEBUG else "ERROR",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -183,3 +189,13 @@ CELERY_IGNORE_RESULT = False
 CELERY_TASK_RETRY_COUNTDOWN = 30
 CELERY_EAGER_PROPAGATES = DEBUG
 CELERY_RESULT_EXPIRES = 60 * 60
+
+ASGI_APPLICATION = 'core_app.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), os.getenv('REDIS_PORT', '6379'))],
+        },
+    },
+}

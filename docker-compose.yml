@@ -12,14 +12,14 @@ services:
     container_name: postgresql
     restart: always
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
-      interval: 10s
+      interval: 1s
       retries: 5
       timeout: 5s
     volumes:
@@ -29,7 +29,11 @@ services:
 
   django:
     build: .
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: ["sh", "-c", "python manage.py migrate && \
+        python manage.py createsuperuser --username admin --email admin@gmail.com --noinput && \
+        python manage.py createsuperuser --username admin1 --email admin1@gmail.com --noinput && \
+        daphne core_app.asgi:application --bind 0.0.0.0 --port 8000
+        "] 
     volumes:
       - .:/app
     ports:
