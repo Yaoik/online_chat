@@ -67,6 +67,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+.pytest_cache
 
 # Translations
 *.mo
@@ -89,3 +90,4 @@ local_settings.py
 .env
 .frontend
 db.sqlite3
+staticfiles

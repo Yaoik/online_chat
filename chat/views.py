@@ -11,14 +11,14 @@ from .serializers import (
     ChannelCreateSerializer,
     ChannelSerializer,
     #ChannelMembershipCreateSerializer,
-    #ChannelMembershipSerializer,
+    ChannelMembershipSerializer,
     InvitationCreateSerializer,
     InvitationSerializer,
     MessageCreateSerializer,
     MessageSerializer
 )
-#from rest_framework.generics import GenericAPIView
-#from rest_framework import mixins
+from rest_framework.generics import GenericAPIView
+from rest_framework import mixins
 from .permissions import (
     IsChannelMember, 
     IsChannelAdmin, 
@@ -191,3 +191,16 @@ class MessageView(
                 "message": message_data,
             }
         )
+
+class ChannelMembershipView(
+    GenericAPIView,
+    mixins.DestroyModelMixin,
+):
+    serializer_class = ChannelMembershipSerializer
+    permission_classes = [IsAuthenticated, IsChannelMember]
+    
+    def get_queryset(self):
+        return ChannelMembership.objects.filter(user=self.request.user).order_by('-id')
+    
+    def delete(self, request:Request, *args, **kwargs):
+        pass
