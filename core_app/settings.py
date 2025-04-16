@@ -1,7 +1,8 @@
-from pathlib import Path
-from dotenv import load_dotenv
 import os
 from datetime import timedelta
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'common',
     'users',
     'chat',
+    'user_auth',
 ]
 
 MIDDLEWARE = [

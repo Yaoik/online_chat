@@ -1,35 +1,46 @@
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework.views import APIView
-from rest_framework import status
+import uuid
+from typing import cast
+
+from asgiref.sync import async_to_sync
+from channels.db import database_sync_to_async
+from channels.layers import get_channel_layer
+from channels_redis.core import RedisChannelLayer
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
+from rest_framework import mixins, status
+from rest_framework.generics import GenericAPIView
+
 #from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+
 #from typing import Any, cast
 from .models import Channel, ChannelMembership, Invitation, Message
-from .serializers import (
+from .permissions import (
+    CanOperateInvitation,
+    IsChannelAdmin,
+    IsChannelMember,
+    IsMessageAuthorOrChannelAdmin,
+)
+from .serializers import (  # ChannelMembershipCreateSerializer,
     ChannelCreateSerializer,
-    ChannelSerializer,
-    #ChannelMembershipCreateSerializer,
     ChannelMembershipSerializer,
+    ChannelSerializer,
     InvitationCreateSerializer,
     InvitationSerializer,
     MessageCreateSerializer,
-    MessageSerializer
+    MessageSerializer,
 )
-from rest_framework.generics import GenericAPIView
-from rest_framework import mixins
-from .permissions import (
-    IsChannelMember, 
-    IsChannelAdmin, 
-    IsMessageAuthorOrChannelAdmin,
-    CanOperateInvitation,
-)
-from channels.layers import get_channel_layer
-import uuid
-from rest_framework.viewsets import ModelViewSet
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
-from django.utils import timezone
+
 
 class ChannelView(
     ModelViewSet,
@@ -147,11 +158,6 @@ class ChannelConnectView(APIView):
         serializer = ChannelSerializer(channel)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-from channels_redis.core import RedisChannelLayer
-from asgiref.sync import async_to_sync
-from channels.db import database_sync_to_async
-from typing import cast
-
 class MessageView(
     ModelViewSet,
 ):
@@ -185,7 +191,7 @@ class MessageView(
         message_data = MessageSerializer(message).data
         
         async_to_sync(channel_layer.group_send)(
-            f"channel_{message.channel.id}",
+            f"channel_{message.channel.pk}",
             {
                 "type": "chat.message",
                 "message": message_data,
