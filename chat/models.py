@@ -1,9 +1,13 @@
-from django.db import models
-from common.models import Timestamped
 import uuid
-from users.models import User
+
+from django.db import models
 from django.utils import timezone
+
+from common.models import Timestamped
+from users.models import User
+
 from .choices import ExpirationTime
+
 
 class Channel(Timestamped):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True, editable=False)
@@ -51,7 +55,7 @@ class Message(Timestamped):
         return f"{self.channel} -> <Message {self.pk}>"
     
 class Invitation(Timestamped):
-    token = models.UUIDField(default=uuid.uuid4(), primary_key=True, editable=False)
+    token = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitations')
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='invitations')
     expires_in = models.DateTimeField(editable=False)
