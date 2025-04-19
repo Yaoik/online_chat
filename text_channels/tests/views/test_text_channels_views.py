@@ -47,7 +47,7 @@ class TestChannelView:
         response = cast(Response, authenticated_client.get(url))
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 1
+        assert len(response.data) == 1  # type: ignore
         assert response.data[0]["uuid"] == str(channel.uuid)
 
     def test_create_channel_authenticated(
