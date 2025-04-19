@@ -25,7 +25,7 @@ class MiniChannelSerializer(serializers.ModelSerializer):
         read_only_fields = ['name', 'owner', 'created_at', 'users_count']
 
     @extend_schema_field(OpenApiTypes.INT)
-    def get_user_count(self, obj: Channel):
+    def get_users_count(self, obj: Channel):
         return ChannelMembership.objects.filter(channel=obj).count()
 
 
