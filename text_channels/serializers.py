@@ -41,7 +41,7 @@ class ChannelSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(MessageSerializer(allow_null=True))
     def get_last_message(self, obj: Channel):
-        last_message = Message.objects.filter(channel=obj).order_by('-timestamp').first()
+        last_message = Message.objects.filter(channel=obj).order_by('-created_at').first()
         if last_message:
             data = MessageSerializer(last_message).data
             content_length = len(data['content'])

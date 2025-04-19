@@ -9,12 +9,12 @@ from .models import Message
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('channel', 'user', 'content_preview', 'timestamp', 'uuid', 'created_at')
-    list_filter = ('timestamp', 'created_at', 'channel__name')
+    list_display = ('channel', 'user', 'content_preview', 'uuid', 'created_at')
+    list_filter = ('created_at', 'channel__name')
     search_fields = ('content', 'user__username', 'user__email', 'channel__name', 'uuid')
-    readonly_fields = ('uuid', 'timestamp', 'created_at', 'updated_at')
-    date_hierarchy = 'timestamp'
-    ordering = ('-timestamp',)
+    readonly_fields = ('uuid', 'created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
 
     def content_preview(self, obj):
         """Показывает первые 50 символов сообщения"""
