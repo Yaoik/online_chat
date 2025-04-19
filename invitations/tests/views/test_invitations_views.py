@@ -48,8 +48,8 @@ class TestInvitationView:
         response = cast(Response, authenticated_client.get(url))
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) == 1
-        assert response.data['results'][0]["uuid"] == str(invitation.uuid)
+        assert len(response.data['results']) == 1  # type: ignore
+        assert response.data['results'][0]["uuid"] == str(invitation.uuid)  # type: ignore
 
     def test_create_invitation(
         self, authenticated_client: APIClient, user: UserFactory
@@ -63,7 +63,7 @@ class TestInvitationView:
         response = cast(Response, authenticated_client.post(url, data, format="json"))
 
         assert response.status_code == status.HTTP_201_CREATED
-        invitation = Invitation.objects.get(uuid=response.data["uuid"])
+        invitation = Invitation.objects.get(uuid=response.data["uuid"])  # type: ignore
         assert invitation.author == user
         assert invitation.channel == channel
         assert invitation.expiration_period == "24"
