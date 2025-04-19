@@ -278,3 +278,5 @@ SOCIAL_AUTH_PIPELINE = (
 
 # DATABASES['default']['HOST'] = 'localhost'
 # CHANNEL_LAYERS['default']['CONFIG']['hosts'] = ['redis://127.0.0.1', os.getenv('REDIS_PORT', '6379')]
+
+CHANNEL_LAST_MESSAGE_MAX_LENGTH = int(os.getenv('CHANNEL_LAST_MESSAGE_MAX_LENGTH', 25))

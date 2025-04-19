@@ -30,11 +30,6 @@ services:
   django:
     build: .
     command: ["sh", "-c", "python manage.py migrate && \
-        python manage.py createsuperuser --username admin --email admin@gmail.com --noinput && \
-        python manage.py createsuperuser --username admin1 --email admin1@gmail.com --noinput && \
-        python manage.py createsuperuser --username admin2 --email admin2@gmail.com --noinput && \
-        python manage.py createsuperuser --username admin3 --email admin3@gmail.com --noinput && \
-        python manage.py createsuperuser --username admin4 --email admin4@gmail.com --noinput && \
         python manage.py collectstatic --noinput && \
         daphne core_app.asgi:application --bind 0.0.0.0 --port 8000
         "] 

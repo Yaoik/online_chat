@@ -3,13 +3,12 @@ import uuid
 from django.db import models
 
 from common.models import Timestamped
-from text_channels.models import Channel
 from users.models import User
 
 
 class Message(Timestamped):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True, editable=False)
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='messages')
+    channel = models.ForeignKey('text_channels.Channel', on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='messages')
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
