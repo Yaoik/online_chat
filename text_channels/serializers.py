@@ -17,7 +17,6 @@ class MiniChannelSerializer(serializers.ModelSerializer):
     Используется в Invitations, не должен передавать чувствительные данные!
     """
     owner = UserSerializer(read_only=True)
-    users = serializers.SerializerMethodField()
     users_count = serializers.SerializerMethodField()
 
     class Meta:
