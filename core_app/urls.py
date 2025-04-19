@@ -20,18 +20,19 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    path('', include('chat.urls')),
+    path('', include('common.urls')),
     path('', include('users.urls')),
     path('', include('user_auth.urls')),
+    path('', include('text_channels.urls')),
+    path('', include('audio_channels.urls')),
+    path('', include('text_messages.urls')),
+    path('', include('invitations.urls')),
 ]
-
 
 urlpatterns += [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
-
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -9,7 +9,7 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv(
-    "SECRET_KEY", "django-insecure-fl8s2_@1dea=y_&l)pivo=hi!8w8jq-4&s_rjcv&&x$b0hi&s#", 
+    "SECRET_KEY", "django-insecure-fl8s2_@1dea=y_&l)pivo=hi!8w8jq-4&s_rjcv&&x$b0hi&s#",
 )
 
 DEBUG = bool(os.getenv("DEBUG", default=0))
@@ -50,7 +50,7 @@ THIRD_PARTY_APPS = [
     'channels',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    
+
     'oauth2_provider',
     'social_django',
     'drf_social_oauth2',
@@ -61,8 +61,11 @@ INSTALLED_APPS = [
     *THIRD_PARTY_APPS,
     'common',
     'users',
-    'chat',
     'user_auth',
+    'text_channels',
+    'audio_channels',
+    'text_messages',
+    'invitations',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +73,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -115,7 +118,6 @@ DATABASES = {
         },
     }
 }
-DATABASES['default']['HOST'] = 'localhost'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -209,8 +211,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', "redis://redis:6379/0") 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', "redis://redis:6379/0") 
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', "redis://redis:6379/0")
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_IGNORE_RESULT = False
@@ -223,7 +225,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), os.getenv('REDIS_PORT', '6379'))],
+            "hosts": [(os.getenv('REDIS_HOST', 'redis://127.0.0.1'), os.getenv('REDIS_PORT', '6379'))],
         },
     },
 }
@@ -271,6 +273,8 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
-    
     'user_auth.pipeline.add_ntoken_redirect',
 )
+
+# DATABASES['default']['HOST'] = 'localhost'
+# CHANNEL_LAYERS['default']['CONFIG']['hosts'] = ['redis://127.0.0.1', os.getenv('REDIS_PORT', '6379')]
