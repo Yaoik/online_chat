@@ -1,8 +1,12 @@
+import logging
+
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
 from rest_framework.request import Request
 
 from text_channels.models import Channel, ChannelMembership
+
+logger = logging.getLogger(__name__)
 
 
 class InvitationPermissions(permissions.BasePermission):
@@ -29,8 +33,9 @@ class InvitationPermissions(permissions.BasePermission):
         is_admin = ChannelMembership.objects.filter(
             user=request.user, channel=channel, is_baned=False, is_admin=True
         ).exists()
+
         if not is_admin:
-            self.message = "Only channel admins can perform this action."
+            self.message = "Only channel admins can perform this action.1"
             return False
         return True
 

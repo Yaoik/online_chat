@@ -20,23 +20,6 @@ logger = logging.getLogger(__name__)
 fake = Faker()
 
 
-class ChannelFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Channel
-
-    name = factory.LazyAttribute(lambda _: fake.word())
-    owner = factory.SubFactory(UserFactory)
-
-
-class ChannelMembershipFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = ChannelMembership
-
-    user = factory.SubFactory(UserFactory)
-    channel = factory.SubFactory(ChannelFactory)
-    is_admin = False
-
-
 class MessageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Message

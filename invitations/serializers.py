@@ -5,7 +5,7 @@ from rest_framework import serializers
 from text_channels.serializers import ChannelSerializer
 from users.serializers import UserSerializer
 
-from .choices import ExpirationTime
+from .choices import ExpirationTimeChoices
 from .models import Invitation
 
 
@@ -33,6 +33,6 @@ class InvitationCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['uuid', 'expires_in']
 
     def validate_expiration_period(self, expiration_period: str):
-        if expiration_period not in ExpirationTime.values:
+        if expiration_period not in ExpirationTimeChoices.values:
             raise serializers.ValidationError("Недопустимый срок действия.")
         return super().validate(expiration_period)

@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from text_messages.models import Message
 from text_messages.serializers import MessageSerializer
+from users.models import User
 from users.serializers import UserSerializer
 
 from .models import Channel, ChannelMembership
@@ -13,11 +14,12 @@ from .models import Channel, ChannelMembership
 class ChannelSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)
     last_message = serializers.SerializerMethodField()
+    users = serializers.SerializerMethodField()
 
     class Meta:
         model = Channel
-        fields = ['uuid', 'name', 'owner', 'created_at', 'last_message']
-        read_only_fields = ['uuid', 'name', 'created_at', 'last_message']
+        fields = ['uuid', 'name', 'owner', 'created_at', 'last_message', 'users']
+        read_only_fields = ['uuid', 'name', 'owner', 'created_at', 'last_message', 'users']
 
     @extend_schema_field(MessageSerializer(allow_null=True))
     def get_last_message(self, obj: Channel):
@@ -28,6 +30,12 @@ class ChannelSerializer(serializers.ModelSerializer):
             if content_length > settings.CHANNEL_LAST_MESSAGE_MAX_LENGTH:
                 data['content'] = data['content'][:settings.CHANNEL_LAST_MESSAGE_MAX_LENGTH] + '...'
             return data
+
+    @extend_schema_field(UserSerializer(many=True))
+    def get_users(self, obj: Channel):
+        memberships = ChannelMembership.objects.filter(channel=obj).select_related('user')
+        users = [membership.user for membership in memberships]
+        return UserSerializer(users, many=True).data
 
 
 class ChannelCreateSerializer(serializers.ModelSerializer):

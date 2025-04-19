@@ -7,7 +7,7 @@ from common.models import Timestamped
 from text_channels.models import Channel
 from users.models import User
 
-from .choices import ExpirationTime
+from .choices import ExpirationTimeChoices
 
 
 class Invitation(Timestamped):
@@ -17,8 +17,8 @@ class Invitation(Timestamped):
     expires_in = models.DateTimeField(editable=False)
     expiration_period = models.CharField(
         max_length=2,
-        choices=ExpirationTime.choices,
-        default=ExpirationTime.ONE_HOUR
+        choices=ExpirationTimeChoices.choices,
+        default=ExpirationTimeChoices.ONE_HOUR
     )
 
     class Meta:
