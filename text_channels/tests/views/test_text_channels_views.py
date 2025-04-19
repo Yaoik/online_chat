@@ -58,7 +58,7 @@ class TestChannelView:
         response = cast(Response, authenticated_client.post(url, data, format="json"))
 
         assert response.status_code == status.HTTP_201_CREATED
-        channel = Channel.objects.get(uuid=response.data["uuid"])
+        channel = Channel.objects.get(uuid=response.data["uuid"])  # type: ignore
         assert channel.name == "Test Channel"
         assert channel.owner == user
         assert ChannelMembership.objects.filter(
