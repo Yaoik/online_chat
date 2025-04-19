@@ -48,7 +48,7 @@ class TestChannelView:
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 1  # type: ignore
-        assert response.data[0]["uuid"] == str(channel.uuid)
+        assert response.data[0]["uuid"] == str(channel.uuid)  # type: ignore
 
     def test_create_channel_authenticated(
         self, authenticated_client: APIClient, user: UserFactory
