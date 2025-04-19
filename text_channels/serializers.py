@@ -1,5 +1,6 @@
 
 from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -9,6 +10,24 @@ from users.models import User
 from users.serializers import UserSerializer
 
 from .models import Channel, ChannelMembership
+
+
+class MiniChannelSerializer(serializers.ModelSerializer):
+    """
+    Используется в Invitations, не должен передавать чувствительные данные!
+    """
+    owner = UserSerializer(read_only=True)
+    users = serializers.SerializerMethodField()
+    users_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Channel
+        fields = ['name', 'owner', 'created_at', 'users_count']
+        read_only_fields = ['name', 'owner', 'created_at', 'users_count']
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_user_count(self, obj: Channel):
+        return ChannelMembership.objects.filter(channel=obj).count()
 
 
 class ChannelSerializer(serializers.ModelSerializer):

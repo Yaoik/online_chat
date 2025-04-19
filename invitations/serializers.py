@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from text_channels.serializers import ChannelSerializer
+from text_channels.serializers import MiniChannelSerializer
 from users.serializers import UserSerializer
 
 from .choices import ExpirationTimeChoices
@@ -11,7 +11,7 @@ from .models import Invitation
 
 class InvitationSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    channel = ChannelSerializer(read_only=True)
+    channel = MiniChannelSerializer(read_only=True)
     is_expired = serializers.SerializerMethodField()
 
     class Meta:
@@ -25,7 +25,7 @@ class InvitationSerializer(serializers.ModelSerializer):
 
 class InvitationCreateSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    channel = ChannelSerializer(read_only=True)
+    channel = MiniChannelSerializer(read_only=True)
 
     class Meta:
         model = Invitation
