@@ -29,10 +29,7 @@ services:
 
   django:
     build: .
-    command: ["sh", "-c", "python manage.py migrate && \
-        python manage.py collectstatic --noinput && \
-        daphne core_app.asgi:application --bind 0.0.0.0 --port 8000
-        "] 
+    command: ["sh", "-c", "daphne core_app.asgi:application --bind 0.0.0.0 --port 8000"] 
     volumes:
       - .:/app
     ports:
