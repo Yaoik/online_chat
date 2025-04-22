@@ -10,17 +10,21 @@ docker-compose up
 ```
 3. Выполните миграцию базы данных
 ```bash
-docker-compose exec django ./manage.py migrate
+docker-compose exec django python manage.py migrate
 ```
 4. Cоздайте администратора
 ```bash
-docker-compose exec django ./manage.py createsuperuser
+docker-compose exec django python manage.py createsuperuser
 ```
 5. Соберите статику
 ```bash
-docker-compose exec django ./manage.py collectstatic
+docker-compose exec django python manage.py collectstatic
 ```
-6. Некоторые полезные страницы
+6. Выполните тесты
+```bash
+docker-compose exec django pytest
+```
+7. Некоторые полезные страницы
    * Админка - http://localhost:8000/admin/
    * API документация
      * Swagger - http://localhost:8000/api/schema/swagger-ui/
