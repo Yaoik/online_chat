@@ -16,6 +16,12 @@ class User(AbstractBaseUser, Timestamped, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+        verbose_name="Аватар",
+    )
 
     objects = CustomUserManager()
 

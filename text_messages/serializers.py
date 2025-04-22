@@ -26,3 +26,6 @@ class MessageCreateSerializer(serializers.ModelSerializer):
             'content': {'required': True}
         }
         read_only_fields = ('channel',)
+
+    def to_representation(self, instance):
+        return MessageSerializer(instance).to_representation(instance)

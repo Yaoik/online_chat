@@ -4,6 +4,7 @@
 .venv
 **/.git
 staticfiles
+media
 docker-compose.yml
 Dockerfile
 README.md

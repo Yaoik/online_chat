@@ -11,7 +11,6 @@ class Message(Timestamped):
     channel = models.ForeignKey('text_channels.Channel', on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='messages')
     content = models.TextField()
-    # timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Сообщение"

@@ -91,3 +91,4 @@ local_settings.py
 .frontend
 db.sqlite3
 staticfiles
+media

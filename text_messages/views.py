@@ -43,7 +43,7 @@ class MessageView(
 
     def get_queryset(self):
         channel_uuid = self.kwargs['channel_uuid']
-        return Message.objects.filter(channel__uuid=channel_uuid).order_by('-id')
+        return Message.objects.filter(channel__uuid=channel_uuid).order_by('-created_at')
 
     def perform_create(self, serializer: MessageCreateSerializer):
         channel_uuid = self.kwargs['channel_uuid']
