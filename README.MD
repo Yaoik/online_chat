@@ -5,21 +5,22 @@
 cp .env.template .env
 ```
 2. Запустите приложение
-
 ```bash
 docker-compose up
 ```
 3. Выполните миграцию базы данных
 ```bash
 docker-compose exec django ./manage.py migrate
-
 ```
 4. Cоздайте администратора
 ```bash
 docker-compose exec django ./manage.py createsuperuser
-
 ```
-5. Некоторые полезные страницы
+5. Соберите статику
+```bash
+docker-compose exec django ./manage.py collectstatic
+```
+6. Некоторые полезные страницы
    * Админка - http://localhost:8000/admin/
    * API документация
      * Swagger - http://localhost:8000/api/schema/swagger-ui/
