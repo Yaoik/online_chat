@@ -1,27 +1,18 @@
 import logging
-import uuid
 from typing import cast
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from channels_redis.core import RedisChannelLayer
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from drf_spectacular.utils import extend_schema
-from rest_framework import mixins, status
-from rest_framework.generics import GenericAPIView
-
-# from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from text_channels.models import Channel
+from text_channels.serializers import WebsocketChannelSerializer
 
 from .models import Message
-from .permissions import MessagePermissions, Permissionsss
+from .permissions import MessagePermissions
 from .serializers import MessageCreateSerializer, MessageSerializer
 
 logger = logging.getLogger(__name__)
@@ -62,6 +53,7 @@ class MessageView(
             return
 
         serialized_message = MessageSerializer(message).data
+        serialized_channel = WebsocketChannelSerializer(message).data
         group_name = f"websocket_channel_{message.channel.pk}"
 
         async_to_sync(channel_layer.group_send)(
@@ -69,5 +61,6 @@ class MessageView(
             {
                 "type": "chat_message",
                 "message": serialized_message,
+                "channel": serialized_channel,
             }
         )

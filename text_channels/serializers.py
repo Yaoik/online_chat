@@ -12,6 +12,16 @@ from users.serializers import UserSerializer
 from .models import Channel, ChannelMembership
 
 
+class WebsocketChannelSerializer(serializers.ModelSerializer):
+    """
+    Используется в common.consumers.MainConsumer, нужны только минимальные данные для обозначения канала.
+    """
+    class Meta:
+        model = Channel
+        fields = ('uuid', 'name', 'last_message_number', )
+        read_only_fields = ('uuid', 'name', 'last_message_number', )
+
+
 class MiniChannelSerializer(serializers.ModelSerializer):
     """
     Используется в Invitations, не должен передавать чувствительные данные!

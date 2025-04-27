@@ -140,7 +140,11 @@ class MainConsumer(AsyncWebsocketConsumer):
     async def chat_message(self, event: dict) -> None:
         """Метод для отправки MessageSerializer(Message).data всем пользователям в канале этого сообщения"""
         message_data = event["message"]
+        channel_data = event["channel"]
         await self.send(text_data=json.dumps({
             "type": "chat_message",
-            "message": message_data,
+            "data": {
+                "message": message_data,
+                "channel": channel_data,
+            },
         }))
