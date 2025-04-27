@@ -133,7 +133,7 @@ class MainConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_user_channels(self) -> tuple[int]:
         return tuple(
-            ChannelMembership.objects.filter(user=self.user)
+            ChannelMembership.objects.filter(user=self.user, is_baned=False)
             .values_list("channel__pk", flat=True)
         )
 
@@ -148,3 +148,16 @@ class MainConsumer(AsyncWebsocketConsumer):
                 "channel": channel_data,
             },
         }))
+
+    async def unsubscribe_channel(self, event: dict) -> None:
+        """
+        Метод для отписки пользователя от группы канала.
+        """
+        channel_pk = event["channel_pk"]
+        group_name = f"websocket_channel_{channel_pk}"
+        logger.info(f"Unsubscribing {self.user.username} from group {group_name}")
+        try:
+            await self.channel_layer.group_discard(group_name, self.channel_name)
+            logger.info(f"User {self.user.username} unsubscribed from {group_name}")
+        except Exception as e:
+            logger.error(f"Failed to unsubscribe {self.user.username} from {group_name}: {e}")

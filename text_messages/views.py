@@ -53,7 +53,7 @@ class MessageView(
             return
 
         serialized_message = MessageSerializer(message).data
-        serialized_channel = WebsocketChannelSerializer(message).data
+        serialized_channel = WebsocketChannelSerializer(message.channel).data
         group_name = f"websocket_channel_{message.channel.pk}"
 
         async_to_sync(channel_layer.group_send)(

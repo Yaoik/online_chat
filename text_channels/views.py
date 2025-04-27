@@ -1,6 +1,10 @@
+import logging
 import uuid
 from typing import cast
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from channels_redis.core import RedisChannelLayer
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -22,6 +26,8 @@ from .serializers import (
     ChannelMembershipSerializer,
     ChannelSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ChannelView(
@@ -116,7 +122,27 @@ class ChannelDisconnectView(
     lookup_url_kwarg = 'channel_uuid'
 
     def get_queryset(self):
-        return ChannelMembership.objects.filter(user=self.request.user)
+        return ChannelMembership.objects.filter(user=self.request.user, is_baned=False).select_related('user', 'channel')
 
     def delete(self, request: Request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+    def perform_destroy(self, instance: ChannelMembership):
+        instance.delete()
+        self._ws(instance)
+
+    def _ws(self, channel_membership: ChannelMembership) -> None:
+        channel_layer = cast(RedisChannelLayer, get_channel_layer())
+        if not channel_layer:
+            logger.error("Channel layer is not configured")
+            return
+
+        group_name = f"websocket_user_{channel_membership.user.pk}"
+
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                "type": "unsubscribe_channel",
+                "channel_pk": channel_membership.channel.pk
+            }
+        )
