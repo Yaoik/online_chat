@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import cast
 
@@ -23,6 +24,8 @@ from .models import Message
 from .permissions import MessagePermissions, Permissionsss
 from .serializers import MessageCreateSerializer, MessageSerializer
 
+logger = logging.getLogger(__name__)
+
 
 class MessageView(
     ModelViewSet,
@@ -43,7 +46,7 @@ class MessageView(
 
     def get_queryset(self):
         channel_uuid = self.kwargs['channel_uuid']
-        return Message.objects.filter(channel__uuid=channel_uuid).order_by('-created_at')
+        return Message.objects.filter(channel__uuid=channel_uuid)
 
     def perform_create(self, serializer: MessageCreateSerializer):
         channel_uuid = self.kwargs['channel_uuid']
@@ -54,12 +57,17 @@ class MessageView(
 
     def _send_ws_message(self, message: Message) -> None:
         channel_layer = cast(RedisChannelLayer, get_channel_layer())
-        message_data = MessageSerializer(message).data
+        if not channel_layer:
+            logger.error("Channel layer is not configured")
+            return
+
+        serialized_message = MessageSerializer(message).data
+        group_name = f"websocket_channel_{message.channel.pk}"
 
         async_to_sync(channel_layer.group_send)(
-            f"channel_{message.channel.pk}",
+            group_name,
             {
-                "type": "chat.message",
-                "message": message_data,
+                "type": "chat_message",
+                "message": serialized_message,
             }
         )

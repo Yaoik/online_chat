@@ -44,10 +44,11 @@ class Command(BaseCommand):
             return
 
         same_user_chance = 0.7
-        short_message_chance = 0.1
+        short_message_chance = 0.8
         change_channel_chance = 0.1
         update_chance = 0.1
         change_date_chance = 0.2
+        is_deleted_chance = 0.05
 
         end_date = timezone.now()
         start_date = end_date - timedelta(days=random.randint(1, 365*3))
@@ -76,12 +77,14 @@ class Command(BaseCommand):
                 updated_at = created_at + timedelta(minutes=random.randint(1, 455))
             else:
                 updated_at = created_at
+            is_deleted = is_deleted_chance > random.random()
             message = Message.objects.create(
                 user=current_user,
                 channel=current_channel,
                 content=content,
                 created_at=created_at,
                 updated_at=updated_at,
+                is_deleted=is_deleted,
             )
             Message.objects.filter(uuid=message.uuid).update(created_at=created_at, updated_at=updated_at)
 

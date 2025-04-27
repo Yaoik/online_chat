@@ -36,8 +36,8 @@ class ChannelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Channel
-        fields = ['uuid', 'name', 'owner', 'created_at', 'last_message', 'users']
-        read_only_fields = ['uuid', 'name', 'owner', 'created_at', 'last_message', 'users']
+        fields = ['uuid', 'name', 'owner', 'created_at', 'last_message', 'users', 'last_message_number']
+        read_only_fields = fields
 
     @extend_schema_field(MessageSerializer(allow_null=True))
     def get_last_message(self, obj: Channel):

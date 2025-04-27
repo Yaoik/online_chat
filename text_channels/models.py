@@ -9,6 +9,7 @@ from users.models import User
 class Channel(Timestamped):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True, editable=False)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='user_channels')
+    last_message_number = models.PositiveIntegerField(default=0, editable=False)
     name = models.CharField(max_length=255)
 
     class Meta:
