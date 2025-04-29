@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 
 class CustomRefreshToken(RefreshToken):
@@ -11,4 +11,17 @@ class CustomRefreshToken(RefreshToken):
         """
         token = cls.for_user(user)
         token.set_exp(lifetime=lifetime)
+        return token
+
+
+class CustomAccessToken(AccessToken):
+
+    @classmethod
+    def for_websocket(cls, user, lifetime=timedelta(seconds=30)):
+        """
+        Создаёт acess-токен для пользователя для использования в websocket.
+        """
+        token = cls.for_user(user)
+        token.set_exp(lifetime=lifetime)
+        token['for_websocket'] = True
         return token
