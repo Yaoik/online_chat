@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from invitations.models import Invitation
+from users.models import User
 
 from .models import Channel, ChannelMembership
 from .permissions import CanManageChannel, Permissionsss
@@ -97,6 +98,7 @@ class ChannelConnectView(
                 data=request.data, context={'invitation': invitation}))
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
+            self._ws(channel=channel, user=request.user)  # добавляем в группу вебсокетов
             headers = self.get_success_headers(serializer.data)
             data = ChannelSerializer(serializer.instance.channel).data
             return Response(data, status=status.HTTP_201_CREATED, headers=headers)
@@ -106,6 +108,25 @@ class ChannelConnectView(
         serializer.save(
             user=self.request.user,
             channel=invitation.channel,
+        )
+
+    def _ws(self, channel: Channel, user: User) -> None:
+        """
+        При подключении пользователя добавляем его в группу вебсокета
+        """
+        channel_layer = cast(RedisChannelLayer, get_channel_layer())
+        if not channel_layer:
+            logger.error("Channel layer is not configured")
+            return
+
+        group_name = f"websocket_user_{user.pk}"
+
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                "type": "subscribe_channel",
+                "channel_pk": channel.pk
+            }
         )
 
 
@@ -132,6 +153,9 @@ class ChannelDisconnectView(
         self._ws(instance)
 
     def _ws(self, channel_membership: ChannelMembership) -> None:
+        """
+        При отключении пользователя удаляем его из группы вебсокета
+        """
         channel_layer = cast(RedisChannelLayer, get_channel_layer())
         if not channel_layer:
             logger.error("Channel layer is not configured")
