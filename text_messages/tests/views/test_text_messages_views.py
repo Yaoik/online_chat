@@ -242,8 +242,6 @@ class TestMessageView:
 
         url = reverse("channel-ban-detail", kwargs={"channel_uuid": channel.uuid, 'user_id': user.id})  # type: ignore
         response = cast(Response, admin_api_client.post(url))
-        logger.info(f'{response=}')
-        logger.info(f'{response.data=}')
 
         url = reverse("channel-messages-list", kwargs={"channel_uuid": channel.uuid})
         response = cast(Response, authenticated_client.get(url))

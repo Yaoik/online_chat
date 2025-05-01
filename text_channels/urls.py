@@ -2,8 +2,9 @@ from django.urls import path, re_path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    ChannelBanView,
+    ChannelBanListView,
     ChannelConnectView,
+    ChannelCreateDeleteBanView,
     ChannelDisconnectView,
     ChannelView,
 )
@@ -31,12 +32,12 @@ urlpatterns = [
     ),
     path(
         'api/channels/<uuid:channel_uuid>/bans/',
-        ChannelBanView.as_view(),
+        ChannelBanListView.as_view(),
         name='channel-ban-list'
     ),
     path(
         'api/channels/<uuid:channel_uuid>/bans/<int:user_id>/',
-        ChannelBanView.as_view(),
+        ChannelCreateDeleteBanView.as_view(),
         name='channel-ban-detail'
     ),
 ]

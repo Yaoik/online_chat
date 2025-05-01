@@ -185,14 +185,30 @@ class ChannelDisconnectView(
         )
 
 
-class ChannelBanView(
+class ChannelBanListView(
     GenericAPIView,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
     mixins.ListModelMixin,
 ):
     """
-    CRD операции с банами
+    R операции с банами
+    """
+    serializer_class = ChannelBanSerializer
+    permission_classes = [IsAuthenticated, CanManageBans]
+
+    def get_queryset(self):
+        return ChannelBan.objects.filter(channel__uuid=self.kwargs['channel_uuid'])
+
+    def get(self, request, channel_uuid: uuid.UUID, *args, **kwargs):
+        return super().list(request, channel_uuid=channel_uuid, *args, **kwargs)
+
+
+class ChannelCreateDeleteBanView(
+    GenericAPIView,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+):
+    """
+    CD операции с банами
     """
     serializer_class = ChannelBanSerializer
     permission_classes = [IsAuthenticated, CanManageBans]
@@ -225,11 +241,8 @@ class ChannelBanView(
         )
         user_channel_membership.delete()
 
-    def get(self, request, channel_uuid: uuid.UUID, *args, **kwargs):
-        return super().list(request, channel_uuid=channel_uuid, *args, **kwargs)
-
     def post(self, request, channel_uuid: uuid.UUID, user_id: int, *args, **kwargs):
         return super().create(request, channel_uuid=channel_uuid, user_id=user_id, *args, **kwargs)
 
-    def delete(self, request, channel_uuid: uuid.UUID, *args, **kwargs):
-        return self.destroy(request, channel_uuid=channel_uuid, *args, **kwargs)
+    def delete(self, request, channel_uuid: uuid.UUID, user_id: int, *args, **kwargs):
+        return self.destroy(request, channel_uuid=channel_uuid, user_id=user_id, *args, **kwargs)
