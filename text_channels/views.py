@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -17,11 +18,14 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from invitations.models import Invitation
+from text_channels.models import ChannelBan
+from text_channels.serializers import ChannelBanSerializer
 from users.models import User
 
 from .models import Channel, ChannelMembership
-from .permissions import CanManageChannel, Permissionsss
+from .permissions import CanManageBans, CanManageChannel
 from .serializers import (
+    ChannelBanSerializer,
     ChannelCreateSerializer,
     ChannelMembershipCreateSerializer,
     ChannelMembershipSerializer,
@@ -49,7 +53,7 @@ class ChannelView(
         return ChannelSerializer
 
     def get_queryset(self):
-        return Channel.objects.filter(memberships__user=self.request.user, memberships__is_baned=False).order_by('-id')
+        return Channel.objects.filter(memberships__user=self.request.user).exclude(bans_info__user=self.request.user).order_by('-id')
 
     def perform_create(self, serializer: ChannelCreateSerializer):
         user = self.request.user
@@ -91,9 +95,18 @@ class ChannelConnectView(
                 channel=channel,
             ).exists():
                 return Response(
-                    {"error": "Вы не можете подключиться в этот канал"},
+                    {"error": "Вы уже в этом канале"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            if ChannelBan.objects.filter(
+                user=request.user,
+                channel=channel,
+            ).exists():
+                return Response(
+                    {"error": "Вы забанены в этом канале"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             serializer = cast(ChannelMembershipCreateSerializer, self.get_serializer(
                 data=request.data, context={'invitation': invitation}))
             serializer.is_valid(raise_exception=True)
@@ -135,7 +148,7 @@ class ChannelDisconnectView(
     mixins.DestroyModelMixin
 ):
     """
-    DLETE запрос для отключения от канала
+    DELETE запрос для отключения от канала
     """
     serializer_class = ChannelMembershipSerializer
     permission_classes = [IsAuthenticated]
@@ -143,7 +156,7 @@ class ChannelDisconnectView(
     lookup_url_kwarg = 'channel_uuid'
 
     def get_queryset(self):
-        return ChannelMembership.objects.filter(user=self.request.user, is_baned=False).select_related('user', 'channel')
+        return ChannelMembership.objects.filter(user=self.request.user)
 
     def delete(self, request: Request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
@@ -170,3 +183,53 @@ class ChannelDisconnectView(
                 "channel_pk": channel_membership.channel.pk
             }
         )
+
+
+class ChannelBanView(
+    GenericAPIView,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+):
+    """
+    CRD операции с банами
+    """
+    serializer_class = ChannelBanSerializer
+    permission_classes = [IsAuthenticated, CanManageBans]
+    lookup_field = 'user__id'
+    lookup_url_kwarg = 'user_id'
+
+    def get_queryset(self):
+        return ChannelBan.objects.filter(channel__uuid=self.kwargs['channel_uuid'])
+
+    def perform_create(self, serializer: ChannelBanSerializer):
+        channel = get_object_or_404(Channel, uuid=self.kwargs['channel_uuid'])
+        banned_by = self.request.user
+        user = get_object_or_404(User, id=self.kwargs.get('user_id'))
+
+        if user.pk == banned_by.pk:
+            raise ValidationError("Нельза забанить себя.")
+
+        user_channel_membership = ChannelMembership.objects.filter(
+            user=user,
+            channel=channel,
+            is_admin=False,
+        ).first()
+        if not user_channel_membership:
+            raise ValidationError("Пользователь не в канале или админ.")
+
+        serializer.save(
+            channel=channel,
+            user=user,
+            banned_by=banned_by,
+        )
+        user_channel_membership.delete()
+
+    def get(self, request, channel_uuid: uuid.UUID, *args, **kwargs):
+        return super().list(request, channel_uuid=channel_uuid, *args, **kwargs)
+
+    def post(self, request, channel_uuid: uuid.UUID, user_id: int, *args, **kwargs):
+        return super().create(request, channel_uuid=channel_uuid, user_id=user_id, *args, **kwargs)
+
+    def delete(self, request, channel_uuid: uuid.UUID, *args, **kwargs):
+        return self.destroy(request, channel_uuid=channel_uuid, *args, **kwargs)

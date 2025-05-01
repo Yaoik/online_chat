@@ -159,7 +159,7 @@ class TestChannelConnectView:
         response = cast(Response, authenticated_client.post(url))
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Вы не можете подключиться в этот канал" in str(response.data)
+        assert "Вы уже в этом канале" in str(response.data)
 
 
 @pytest.mark.django_db

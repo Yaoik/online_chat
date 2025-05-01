@@ -133,7 +133,7 @@ class MainConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_user_channels(self) -> tuple[int]:
         return tuple(
-            ChannelMembership.objects.filter(user=self.user, is_baned=False)
+            ChannelMembership.objects.filter(user=self.user)
             .values_list("channel__pk", flat=True)
         )
 

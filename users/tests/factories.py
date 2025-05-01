@@ -3,7 +3,7 @@ from faker import Faker
 
 from users.models import User
 
-fake = Faker()
+fake = Faker('ru_RU')
 
 
 class UserFactory(factory.django.DjangoModelFactory):

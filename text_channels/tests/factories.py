@@ -1,10 +1,10 @@
 import factory
 from faker import Faker
 
-from text_channels.models import Channel, ChannelMembership
+from text_channels.models import Channel, ChannelBan, ChannelMembership
 from users.tests.factories import UserFactory
 
-fake = Faker()
+fake = Faker('ru_RU')
 
 
 class ChannelFactory(factory.django.DjangoModelFactory):
@@ -22,3 +22,13 @@ class ChannelMembershipFactory(factory.django.DjangoModelFactory):
     user = factory.declarations.SubFactory(UserFactory)
     channel = factory.declarations.SubFactory(ChannelFactory)
     is_admin = False
+
+
+class ChannelBanFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ChannelBan
+
+    channel = factory.declarations.SubFactory(ChannelFactory)
+    banned_by = factory.declarations.SubFactory(UserFactory)
+    user = factory.declarations.SubFactory(UserFactory)
+    reason = factory.declarations.LazyAttribute(lambda _: fake.paragraph())

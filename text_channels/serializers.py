@@ -4,6 +4,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from text_channels.models import ChannelBan
 from text_messages.models import Message
 from text_messages.serializers import MessageSerializer
 from users.models import User
@@ -81,7 +82,7 @@ class ChannelMembershipSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChannelMembership
-        fields = ['id', 'user', 'channel', 'is_admin', 'is_baned']
+        fields = ['uuid', 'user', 'channel', 'is_admin', ]
         read_only_fields = fields
 
 
@@ -91,5 +92,21 @@ class ChannelMembershipCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChannelMembership
-        fields = ['id', 'user', 'channel', 'is_admin', 'is_baned']
-        read_only_fields = ['id', 'user', 'channel', 'is_admin', 'is_baned']
+        fields = ['uuid', 'user', 'channel', 'is_admin', ]
+        read_only_fields = ['uuid', 'user', 'channel', 'is_admin', ]
+
+
+class ChannelBanSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    banned_by = UserSerializer(read_only=True)
+    channel = MiniChannelSerializer(read_only=True)
+
+    class Meta:
+        model = ChannelBan
+        fields = ('uuid', 'user', 'banned_by', 'channel', 'reason', )
+        read_only_fields = ('uuid', 'user', 'banned_by', 'channel', )
+
+    def validate_reason(self, value: str):
+        if value and len(value) > 255:
+            raise serializers.ValidationError("Причина бана слишком длинная (максимум 255 символов).")
+        return value

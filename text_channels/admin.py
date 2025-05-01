@@ -8,17 +8,17 @@ from .models import Channel, ChannelMembership
 class ChannelMembershipInline(admin.TabularInline):
     model = ChannelMembership
     extra = 1
-    fields = ('user', 'is_admin', 'is_baned')
+    fields = ('user', 'is_admin')
     autocomplete_fields = ('user',)
 
 
 @admin.register(ChannelMembership)
 class ChannelMembershipAdmin(admin.ModelAdmin):
-    list_display = ('user', 'channel', 'is_admin', 'is_baned')
-    list_filter = ('is_admin', 'is_baned', 'channel__name')
-    search_fields = ('user__username', 'user__email', 'channel__name', 'channel__uuid')
-    autocomplete_fields = ('user', 'channel')
-    list_editable = ('is_admin', 'is_baned')
+    list_display = ('user', 'channel', 'is_admin', )
+    list_filter = ('is_admin', 'channel__name', )
+    search_fields = ('user__username', 'user__email', 'channel__name', 'channel__uuid', )
+    autocomplete_fields = ('user', 'channel', )
+    list_editable = ('is_admin', )
     ordering = ('user__username',)
 
     def get_queryset(self, request):

@@ -30,7 +30,8 @@ class MessagePermissions(permissions.BasePermission):
     def has_permission(self, request: Request, view) -> bool:
         channel = get_object_or_404(Channel, uuid=view.kwargs['channel_uuid'])
         is_member = ChannelMembership.objects.filter(
-            user=request.user, channel=channel, is_baned=False
+            user=request.user,
+            channel=channel,
         ).exists()
         if not is_member:
             self.message = "You are not a member of this channel or you are banned."
@@ -50,7 +51,7 @@ class MessagePermissions(permissions.BasePermission):
         if request.method == 'DELETE':
             is_author = obj.user == request.user
             is_admin = ChannelMembership.objects.filter(
-                user=request.user, channel=obj.channel, is_baned=False, is_admin=True
+                user=request.user, channel=obj.channel, is_admin=True
             ).exists()
             if not (is_author or is_admin):
                 self.message = "You can only delete your own messages or if you are a channel admin."

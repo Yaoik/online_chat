@@ -1,16 +1,9 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
-from .models import Channel, ChannelMembership
-
-
-class Permissionsss(BasePermission):
-    def has_object_permission(self, request: Request, view, obj):
-        return True
-
-    def has_permission(self, request: Request, view):
-        return True
+from .models import Channel, ChannelBan, ChannelMembership
 
 
 class CanManageChannel(BasePermission):
@@ -31,3 +24,20 @@ class CanManageChannel(BasePermission):
             return obj.owner == request.user
 
         return False
+
+
+class CanManageBans(BasePermission):
+    def has_permission(self, request: Request, view):
+        channel_uuid = view.kwargs['channel_uuid']
+        return ChannelMembership.objects.filter(
+            user=request.user,
+            channel__uuid=channel_uuid,
+            is_admin=True,
+        ).exists()
+
+    def has_object_permission(self, request: Request, view, obj: ChannelBan):
+        return ChannelMembership.objects.filter(
+            user=request.user,
+            channel=obj.channel,
+            is_admin=True,
+        ).exists()

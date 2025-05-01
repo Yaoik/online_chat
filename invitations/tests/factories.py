@@ -6,7 +6,7 @@ from invitations.models import Invitation
 from text_channels.tests.factories import ChannelFactory
 from users.tests.factories import UserFactory
 
-fake = Faker()
+fake = Faker('ru_RU')
 
 
 class InvitationFactory(factory.django.DjangoModelFactory):

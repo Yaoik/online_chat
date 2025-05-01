@@ -9,7 +9,11 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from text_channels.models import Channel, ChannelMembership
-from text_channels.tests.factories import ChannelFactory, ChannelMembershipFactory
+from text_channels.tests.factories import (
+    ChannelBanFactory,
+    ChannelFactory,
+    ChannelMembershipFactory,
+)
 from text_messages.models import Message
 from text_messages.serializers import MessageSerializer
 from text_messages.tests.factories import MessageFactory
@@ -229,7 +233,18 @@ class TestMessageView:
         user: UserFactory,
         channel: Channel,
     ) -> None:
-        ChannelMembershipFactory(user=user, channel=channel, is_baned=True)
+        ChannelMembershipFactory(user=user, channel=channel)
+
+        admin = UserFactory()
+        ChannelMembershipFactory(channel=channel, user=admin, is_admin=True)
+        admin_api_client = APIClient()
+        admin_api_client.force_authenticate(admin)
+
+        url = reverse("channel-ban-detail", kwargs={"channel_uuid": channel.uuid, 'user_id': user.id})  # type: ignore
+        response = cast(Response, admin_api_client.post(url))
+        logger.info(f'{response=}')
+        logger.info(f'{response.data=}')
+
         url = reverse("channel-messages-list", kwargs={"channel_uuid": channel.uuid})
         response = cast(Response, authenticated_client.get(url))
 
