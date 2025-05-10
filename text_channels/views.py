@@ -6,6 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from channels_redis.core import RedisChannelLayer
 from django.db import transaction
+from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -17,20 +18,15 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from invitations.models import Invitation
+from invitations.models import Invitation, InvitationAcceptance
 from text_channels.models import ChannelBan
-from text_channels.serializers import ChannelBanSerializer
 from users.models import User
 
 from .models import Channel, ChannelMembership
 from .permissions import CanManageBans, CanManageChannel
-from .serializers import (
-    ChannelBanSerializer,
-    ChannelCreateSerializer,
-    ChannelMembershipCreateSerializer,
-    ChannelMembershipSerializer,
-    ChannelSerializer,
-)
+from .serializers import (ChannelBanSerializer, ChannelCreateSerializer,
+                          ChannelMembershipCreateSerializer,
+                          ChannelMembershipSerializer, ChannelSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -118,10 +114,15 @@ class ChannelConnectView(
 
     def perform_create(self, serializer: ChannelMembershipCreateSerializer):
         invitation: Invitation = cast(Invitation, serializer.context['invitation'])
-        serializer.save(
-            user=self.request.user,
-            channel=invitation.channel,
-        )
+        with transaction.atomic():
+            serializer.save(
+                user=self.request.user,
+                channel=invitation.channel,
+            )
+            InvitationAcceptance.objects.get_or_create(
+                user=self.request.user,
+                invitation=invitation,
+            )
 
     def _ws(self, channel: Channel, user: User) -> None:
         """

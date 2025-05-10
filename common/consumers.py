@@ -65,9 +65,10 @@ class MainConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code: int):
         if not self.user.is_anonymous and self._is_connection_accepted:
             await self._decrement_connections()
-            await self.unsubscribe_from_user_channels()  # удаляем пользователя из групп websocket_channel_{channel.pk}
+            await self._unsubscribe_from_user_channels()  # удаляем пользователя из групп websocket_channel_{channel.pk}
 
     async def _subscribe_to_user_channels(self):
+        """Подписывает пользователя на сообщения из его каналов."""
         groups = list(await self._get_channel_groups())
         results = await asyncio.gather(
             *[self.channel_layer.group_add(group, self.channel_name) for group in groups],
@@ -77,7 +78,8 @@ class MainConsumer(AsyncWebsocketConsumer):
             if isinstance(result, Exception):
                 logger.error(f"Failed to subscribe to group {group}: {result}")
 
-    async def unsubscribe_from_user_channels(self):
+    async def _unsubscribe_from_user_channels(self):
+        """Отписывает пользователя от сообщений из его каналов."""
         groups = list(await self._get_channel_groups())
         results = await asyncio.gather(
             *[self.channel_layer.group_discard(group, self.channel_name) for group in groups],

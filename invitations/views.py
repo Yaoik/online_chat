@@ -1,5 +1,6 @@
 import logging
 
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -50,7 +51,7 @@ class InvitationView(ModelViewSet):
         if self.action in ('retrieve', 'destroy'):
             return Invitation.objects.filter(expires_in__gt=timezone.now()).order_by('-expires_in')
         channel_uuid = self.kwargs['channel_uuid']
-        return Invitation.objects.filter(channel__uuid=channel_uuid).order_by('-expires_in')
+        return Invitation.objects.filter(Q(channel__uuid=channel_uuid) & Q(expires_in__gt=timezone.now())).order_by('-expires_in')
 
     def perform_create(self, serializer: InvitationCreateSerializer):
         user = self.request.user
@@ -62,4 +63,5 @@ class InvitationView(ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
         return super().destroy(request, *args, **kwargs)
