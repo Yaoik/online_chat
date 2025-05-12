@@ -151,6 +151,30 @@ class MainConsumer(AsyncWebsocketConsumer):
             },
         }))
 
+    async def chat_unsubscribe(self, event: dict) -> None:
+        """Метод для отправки user.pk всем пользователям в канале откуда вышел user"""
+        user_data = event["user"]
+        channel_data = event["channel"]
+        await self.send(text_data=json.dumps({
+            "type": "chat_unsubscribe",
+            "data": {
+                "user": user_data,
+                "channel": channel_data,
+            },
+        }))
+
+    async def chat_subscribe(self, event: dict) -> None:
+        """Метод для отправки user.pk всем пользователям в канале куда зашёл user"""
+        user_data = event["user"]
+        channel_data = event["channel"]
+        await self.send(text_data=json.dumps({
+            "type": "chat_subscribe",
+            "data": {
+                "user": user_data,
+                "channel": channel_data,
+            },
+        }))
+
     async def unsubscribe_channel(self, event: dict) -> None:
         """
         Метод для отписки пользователя от группы канала.
@@ -159,6 +183,15 @@ class MainConsumer(AsyncWebsocketConsumer):
         group_name = f"websocket_channel_{channel_pk}"
         try:
             await self.channel_layer.group_discard(group_name, self.channel_name)
+            # Рассылаем данные о вышедшим пользователе остальным пользователям в канале
+            await self.channel_layer.group_send(
+                group_name,
+                {
+                    "type": 'chat_unsubscribe',
+                    "user": self.user.pk,
+                    "channel": channel_pk,
+                },
+            )
         except Exception as e:
             logger.error(f"Failed to unsubscribe {self.user.username} from {group_name}: {e}")
 
@@ -170,5 +203,14 @@ class MainConsumer(AsyncWebsocketConsumer):
         group_name = f"websocket_channel_{channel_pk}"
         try:
             await self.channel_layer.group_add(group_name, self.channel_name)
+            # Рассылаем данные о зашедшим пользователе остальным пользователям в канале
+            await self.channel_layer.group_send(
+                group_name,
+                {
+                    "type": 'chat_subscribe',
+                    "user": self.user.pk,
+                    "channel": channel_pk,
+                },
+            )
         except Exception as e:
             logger.error(f"Failed to subscribe {self.user.username} from {group_name}: {e}")
